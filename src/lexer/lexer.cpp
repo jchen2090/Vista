@@ -33,7 +33,7 @@ Token Lexer::nextToken() {
     if (std::isspace(currentChar)) {
       if (currentChar == '\n') {
         advance();
-        return Token{TokenType::EOL_TOKEN, "\\n"};
+        return Token{TokenType::EOL_TOKEN, ""};
       }
       advance();
       continue;
@@ -48,7 +48,7 @@ Token Lexer::nextToken() {
     // Check for closing parentheses
     if (currentChar == ')') {
       advance();
-      return Token{TokenType::OPEN_PARENTHESES, ")"};
+      return Token{TokenType::CLOSE_PARENTHESES, ")"};
     }
 
     // Check for assignment
@@ -80,7 +80,7 @@ Token Lexer::nextToken() {
     if (std::isalpha(currentChar)) {
       std::string currentKeyword = "";
 
-      while (std::isalpha(peek())) {
+      while (std::isalnum(peek())) {
         currentKeyword += advance();
       }
 
@@ -109,11 +109,15 @@ Token Lexer::nextToken() {
       bool isFloat = false;
 
       while (std::isdigit(peek()) || peek() == '.') {
-        if (peek() == '.' && isFloat) {
-          std::cerr << "Lexical Error: Invalid numeric literal '"
-                    << currentNumber << peek() << "' has too many decimals"
-                    << std::endl;
-          exit(1);
+        if (peek() == '.') {
+          // If we experience multiple decimal points e.g 3..14 we do not parse
+          if (isFloat) {
+            std::cerr << "Lexical Error: Invalid numeric literal '"
+                      << currentNumber << peek() << "' has too many decimals"
+                      << std::endl;
+            exit(1);
+          }
+          isFloat = true;
         }
 
         currentNumber += advance();
@@ -129,7 +133,7 @@ Token Lexer::nextToken() {
               << std::endl;
     advance();
   }
-  return Token{TokenType::EOF_TOKEN, "\0"};
+  return Token{TokenType::EOF_TOKEN, ""};
 }
 
 std::vector<Token> Lexer::tokenize() {

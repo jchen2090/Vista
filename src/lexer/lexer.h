@@ -9,7 +9,7 @@ class Lexer {
 private:
   std::string line;
   std::vector<Token> tokens;
-  int pos = 0;
+  unsigned int pos = 0;
 
   char peek();
   char advance();
