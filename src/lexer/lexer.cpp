@@ -42,13 +42,13 @@ Token Lexer::nextToken() {
     // Check for opening parentheses
     if (currentChar == '(') {
       advance();
-      return Token{TokenType::OPEN_PARENTHESES, "("};
+      return Token{TokenType::OPEN_PARENTHESES, ""};
     }
 
     // Check for closing parentheses
     if (currentChar == ')') {
       advance();
-      return Token{TokenType::CLOSE_PARENTHESES, ")"};
+      return Token{TokenType::CLOSE_PARENTHESES, ""};
     }
 
     // Check for assignment

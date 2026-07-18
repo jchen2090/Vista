@@ -16,6 +16,8 @@ endif()
 set(SRCS 
     src/lexer/lexer.cpp 
     src/token/token.cpp
+    src/ast/ast.cpp
+    src/parser/parser.cpp
 )
 
 set (TEST_SRCS

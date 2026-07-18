@@ -1,8 +1,11 @@
+#include "ast/ast.h"
 #include "lexer/lexer.h"
+#include "parser/parser.h"
 #include "token/token.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -52,6 +55,10 @@ int main(int argc, char *argv[]) {
 
   std::vector<Token> tokens = lexer.tokenize();
   vectorToString(tokens);
+
+  Parser parser = Parser(tokens);
+  std::unique_ptr<RootNode> ast = parser.parse();
+  ast->debugPrint(0);
 
   fp.close();
 

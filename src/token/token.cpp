@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-void Token::print() {
+void Token::print() const {
 
   std::string typeName;
 
@@ -39,6 +39,12 @@ void Token::print() {
     break;
   case (TokenType::STR):
     typeName = "STR";
+    break;
+  case (TokenType::OPEN_PARENTHESES):
+    typeName = "OPEN PARENTHESES";
+    break;
+  case (TokenType::CLOSE_PARENTHESES):
+    typeName = "CLOSE PARENTHESES";
     break;
   default:
     typeName = "DID NOT DEFINE TYPE";
