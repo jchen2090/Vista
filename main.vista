@@ -1,3 +1,8 @@
 int x = 5
 float y = 2.3
 str z = "hello"
+
+cout(x)
+cout(5)
+cout(2.3)
+cout("hello")
