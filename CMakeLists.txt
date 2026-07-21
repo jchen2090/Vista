@@ -22,6 +22,7 @@ set(SRCS
 
 set (TEST_SRCS
     tests/lexer.cpp 
+    tests/parser.cpp
 )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

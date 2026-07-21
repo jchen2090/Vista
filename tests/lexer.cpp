@@ -3,101 +3,129 @@
 #include <catch2/catch_test_macros.hpp>
 #include <vector>
 
-TEST_CASE("Tokenize Assignment", "[lexer][operators]") {
-  std::string code = "int x = 5";
-  Lexer lexer(code);
-  std::vector<Token> tokens = lexer.tokenize();
-
-  REQUIRE(tokens.size() >= 4);
-
-  SECTION("First token is INT_KEYWORD") {
-    REQUIRE(tokens[0].type == TokenType::INT_KEYWORD);
-    REQUIRE(tokens[0].val == "int");
+TEST_CASE("Tokenize literals", "[lexer][literals]") {
+  SECTION("integer: 42") {
+    auto tokens = Lexer("42").tokenize();
+    REQUIRE(tokens[0].type == TokenType::INT);
+    REQUIRE(tokens[0].val == "42");
+    REQUIRE(tokens[1].type == TokenType::EOF_TOKEN);
   }
 
-  SECTION("Seconed token is IDENTIFIER") {
-    REQUIRE(tokens[1].type == TokenType::IDENTIFIER);
-    REQUIRE(tokens[1].val == "x");
+  SECTION("integer starting with zero: 05") {
+    auto tokens = Lexer("05").tokenize();
+    REQUIRE(tokens[0].type == TokenType::INT);
+    REQUIRE(tokens[0].val == "05");
   }
 
-  SECTION("Third token is ASSIGNMENT") {
-    REQUIRE(tokens[2].type == TokenType::ASSIGN);
-    REQUIRE(tokens[2].val == "=");
+  SECTION("float: 3.14") {
+    auto tokens = Lexer("3.14").tokenize();
+    REQUIRE(tokens[0].type == TokenType::FLOAT);
+    REQUIRE(tokens[0].val == "3.14");
   }
 
-  SECTION("Fourth token is INT") {
-    REQUIRE(tokens[3].type == TokenType::INT);
-    REQUIRE(tokens[3].val == "5");
+  SECTION("float ending with decimal: 5.") {
+    auto tokens = Lexer("5.").tokenize();
+    REQUIRE(tokens[0].type == TokenType::FLOAT);
+    REQUIRE(tokens[0].val == "5.");
   }
-}
 
-TEST_CASE("Tokenize string literal", "[lexer][strings]") {
-  std::string code = "\"hello world\"";
-  Lexer lexer(code);
-  std::vector<Token> tokens = lexer.tokenize();
-
-  REQUIRE(tokens.size() >= 2);
-
-  SECTION("First token is STR") {
+  SECTION("string: \"hello world\"") {
+    auto tokens = Lexer("\"hello world\"").tokenize();
     REQUIRE(tokens[0].type == TokenType::STR);
     REQUIRE(tokens[0].val == "hello world");
   }
 
-  SECTION("Second token is EOF") {
-    REQUIRE(tokens[1].type == TokenType::EOF_TOKEN);
-    REQUIRE(tokens[1].val == "\0");
+  SECTION("empty string: \"\"") {
+    auto tokens = Lexer("\"\"").tokenize();
+    REQUIRE(tokens[0].type == TokenType::STR);
+    REQUIRE(tokens[0].val == "");
   }
 }
 
-TEST_CASE("Tokenize integer literal", "[lexer][numbers]") {
-  std::string code = "42";
-  Lexer lexer(code);
-  std::vector<Token> tokens = lexer.tokenize();
+TEST_CASE("Tokenize keywords and identifiers", "[lexer][keywords][identifiers]") {
+  SECTION("all keywords: int float str cout") {
+    auto tokens = Lexer("int float str cout").tokenize();
+    REQUIRE(tokens.size() == 5);
+    REQUIRE(tokens[0].type == TokenType::INT_KEYWORD);
+    REQUIRE(tokens[0].val == "int");
+    REQUIRE(tokens[1].type == TokenType::FLOAT_KEYWORD);
+    REQUIRE(tokens[1].val == "float");
+    REQUIRE(tokens[2].type == TokenType::STR_KEYWORD);
+    REQUIRE(tokens[2].val == "str");
+    REQUIRE(tokens[3].type == TokenType::COUT_KEYWORD);
+    REQUIRE(tokens[3].val == "cout");
+  }
 
-  REQUIRE(tokens.size() == 2);
+  SECTION("identifiers with numbers: var1 foo123 bar") {
+    auto tokens = Lexer("var1 foo123 bar").tokenize();
+    REQUIRE(tokens.size() == 4);
+    for (size_t i = 0; i < 3; i++) {
+      REQUIRE(tokens[i].type == TokenType::IDENTIFIER);
+      REQUIRE(!tokens[i].val.empty());
+    }
+  }
 
-  SECTION("First token is INT") {
-    REQUIRE(tokens[0].type == TokenType::INT);
-    REQUIRE(tokens[0].val == "42");
+  SECTION("assignment: int x = 5") {
+    auto tokens = Lexer("int x = 5").tokenize();
+    REQUIRE(tokens[0].type == TokenType::INT_KEYWORD);
+    REQUIRE(tokens[0].val == "int");
+    REQUIRE(tokens[1].type == TokenType::IDENTIFIER);
+    REQUIRE(tokens[1].val == "x");
+    REQUIRE(tokens[2].type == TokenType::ASSIGN);
+    REQUIRE(tokens[2].val == "=");
+    REQUIRE(tokens[3].type == TokenType::INT);
+    REQUIRE(tokens[3].val == "5");
+  }
+
+  SECTION("cout with parentheses: cout (42)") {
+    auto tokens = Lexer("cout (42)").tokenize();
+    REQUIRE(tokens[0].type == TokenType::COUT_KEYWORD);
+    REQUIRE(tokens[1].type == TokenType::OPEN_PARENTHESES);
+    REQUIRE(tokens[2].type == TokenType::INT);
+    REQUIRE(tokens[3].type == TokenType::CLOSE_PARENTHESES);
   }
 }
 
-TEST_CASE("Tokenize float literal", "[lexer][numbers]") {
-  std::string code = "3.14";
-  Lexer lexer(code);
-  std::vector<Token> tokens = lexer.tokenize();
+TEST_CASE("Tokenize parentheses", "[lexer][brackets]") {
+  SECTION("standalone: ()") {
+    auto tokens = Lexer("()").tokenize();
+    REQUIRE(tokens.size() == 3);
+    REQUIRE(tokens[0].type == TokenType::OPEN_PARENTHESES);
+    REQUIRE(tokens[1].type == TokenType::CLOSE_PARENTHESES);
+  }
 
-  REQUIRE(tokens.size() == 2);
+  SECTION("with identifier: (a)") {
+    auto tokens = Lexer("(a)").tokenize();
+    REQUIRE(tokens[0].type == TokenType::OPEN_PARENTHESES);
+    REQUIRE(tokens[1].type == TokenType::IDENTIFIER);
+    REQUIRE(tokens[1].val == "a");
+    REQUIRE(tokens[2].type == TokenType::CLOSE_PARENTHESES);
+  }
 
-  SECTION("First token is FLOAT") {
-    REQUIRE(tokens[0].type == TokenType::FLOAT);
-    REQUIRE(tokens[0].val == "3.14");
+  SECTION("function-like: foo(bar)") {
+    auto tokens = Lexer("foo(bar)").tokenize();
+    REQUIRE(tokens[0].type == TokenType::IDENTIFIER);
+    REQUIRE(tokens[0].val == "foo");
+    REQUIRE(tokens[1].type == TokenType::OPEN_PARENTHESES);
+    REQUIRE(tokens[2].type == TokenType::IDENTIFIER);
+    REQUIRE(tokens[2].val == "bar");
+    REQUIRE(tokens[3].type == TokenType::CLOSE_PARENTHESES);
   }
 }
 
-TEST_CASE("Tokenize multiple float literals", "[lexer][numbers]") {
-  std::string code = "1.5 2.7";
-  Lexer lexer(code);
-  std::vector<Token> tokens = lexer.tokenize();
-
-  REQUIRE(tokens.size() == 3); // 1.5, space, 2.7, EOF
-
-  SECTION("Float literals are correct") {
+TEST_CASE("Tokenize numbers", "[lexer][numbers]") {
+  SECTION("multiple floats: 1.5 2.7") {
+    auto tokens = Lexer("1.5 2.7").tokenize();
+    REQUIRE(tokens.size() == 3);
     REQUIRE(tokens[0].type == TokenType::FLOAT);
     REQUIRE(tokens[0].val == "1.5");
     REQUIRE(tokens[1].type == TokenType::FLOAT);
     REQUIRE(tokens[1].val == "2.7");
   }
-}
 
-TEST_CASE("Tokenize multiple number types", "[lexer][numbers]") {
-  std::string code = "1 2 3.14";
-  Lexer lexer(code);
-  std::vector<Token> tokens = lexer.tokenize();
-
-  REQUIRE(tokens.size() == 4); // 1, 2, 3.14, EOF
-
-  SECTION("Mixed number types") {
+  SECTION("mixed types: 1 2 3.14") {
+    auto tokens = Lexer("1 2 3.14").tokenize();
+    REQUIRE(tokens.size() == 4);
     REQUIRE(tokens[0].type == TokenType::INT);
     REQUIRE(tokens[0].val == "1");
     REQUIRE(tokens[1].type == TokenType::INT);
@@ -107,82 +135,50 @@ TEST_CASE("Tokenize multiple number types", "[lexer][numbers]") {
   }
 }
 
-TEST_CASE("Tokenize keywords", "[lexer][keywords]") {
-  std::string code = "int float str cout";
-  Lexer lexer(code);
-  std::vector<Token> tokens = lexer.tokenize();
-
-  REQUIRE(tokens.size() == 5); // int, float, str, cout, EOF
-
-  SECTION("INT_KEYWORD token") {
-    REQUIRE(tokens[0].type == TokenType::INT_KEYWORD);
-    REQUIRE(tokens[0].val == "int");
+TEST_CASE("Tokenize newlines and whitespace", "[lexer][edge-cases]") {
+  SECTION("newline between tokens: a\\nb") {
+    auto tokens = Lexer("a\nb").tokenize();
+    REQUIRE(tokens.size() == 4);
+    REQUIRE(tokens[0].type == TokenType::IDENTIFIER);
+    REQUIRE(tokens[1].type == TokenType::EOL_TOKEN);
+    REQUIRE(tokens[2].type == TokenType::IDENTIFIER);
+    REQUIRE(tokens[2].val == "b");
+    REQUIRE(tokens[3].type == TokenType::EOF_TOKEN);
   }
 
-  SECTION("FLOAT_KEYWORD token") {
-    REQUIRE(tokens[1].type == TokenType::FLOAT_KEYWORD);
-    REQUIRE(tokens[1].val == "float");
+  SECTION("multiple newlines: \\n\\n\\n") {
+    auto tokens = Lexer("\n\n\n").tokenize();
+    REQUIRE(tokens.size() == 4);
+    REQUIRE(tokens[0].type == TokenType::EOL_TOKEN);
+    REQUIRE(tokens[1].type == TokenType::EOL_TOKEN);
+    REQUIRE(tokens[2].type == TokenType::EOL_TOKEN);
   }
 
-  SECTION("STR_KEYWORD token") {
-    REQUIRE(tokens[2].type == TokenType::STR_KEYWORD);
-    REQUIRE(tokens[2].val == "str");
+  SECTION("trailing newline: hello\\n") {
+    auto tokens = Lexer("hello\n").tokenize();
+    REQUIRE(tokens.size() == 3);
+    REQUIRE(tokens[0].type == TokenType::IDENTIFIER);
+    REQUIRE(tokens[1].type == TokenType::EOL_TOKEN);
   }
 
-  SECTION("COUT_KEYWORD token") {
-    REQUIRE(tokens[3].type == TokenType::COUT_KEYWORD);
-    REQUIRE(tokens[3].val == "cout");
-  }
-}
-
-TEST_CASE("Tokenize parentheses", "[lexer][brackets]") {
-  std::string code = "(a)";
-  Lexer lexer(code);
-  std::vector<Token> tokens = lexer.tokenize();
-
-  REQUIRE(tokens.size() == 4); // (, a, ), EOF
-
-  SECTION("OPEN_PARENTHESES for both parens") {
-    REQUIRE(tokens[0].type == TokenType::OPEN_PARENTHESES);
-    REQUIRE(tokens[0].val == "(");
-    REQUIRE(tokens[2].type == TokenType::CLOSE_PARENTHESES);
-    REQUIRE(tokens[2].val == ")");
-  }
-}
-
-TEST_CASE("Tokenize empty string", "[lexer][edge-cases]") {
-  std::string code = "";
-  Lexer lexer(code);
-  std::vector<Token> tokens = lexer.tokenize();
-
-  SECTION("Empty input produces single EOF_TOKEN") {
+  SECTION("empty input") {
+    auto tokens = Lexer("").tokenize();
     REQUIRE(tokens.size() == 1);
     REQUIRE(tokens[0].type == TokenType::EOF_TOKEN);
     REQUIRE(tokens[0].val == "");
   }
-}
 
-TEST_CASE("Tokenize whitespace only", "[lexer][edge-cases]") {
-  std::string code = "    ";
-  Lexer lexer(code);
-  std::vector<Token> tokens = lexer.tokenize();
-
-  SECTION("Whitespace-only input produces single EOF_TOKEN") {
+  SECTION("whitespace only") {
+    auto tokens = Lexer("    ").tokenize();
     REQUIRE(tokens.size() == 1);
     REQUIRE(tokens[0].type == TokenType::EOF_TOKEN);
-    REQUIRE(tokens[0].val == "");
   }
-}
 
-TEST_CASE("Tokenize identifiers with numbers", "[lexer][identifiers]") {
-  std::string code = "var1 foo123 bar";
-  Lexer lexer(code);
-  std::vector<Token> tokens = lexer.tokenize();
-
-  SECTION("All are IDENTIFIER tokens") {
-    for (size_t i = 0; i < 3; i++) {
-      REQUIRE(tokens[i].type == TokenType::IDENTIFIER);
-      REQUIRE(!tokens[i].val.empty());
-    }
+  SECTION("whitespace with newlines") {
+    auto tokens = Lexer("  \n  \n").tokenize();
+    REQUIRE(tokens.size() == 3);
+    REQUIRE(tokens[0].type == TokenType::EOL_TOKEN);
+    REQUIRE(tokens[1].type == TokenType::EOL_TOKEN);
+    REQUIRE(tokens[2].type == TokenType::EOF_TOKEN);
   }
 }
