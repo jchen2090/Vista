@@ -2,6 +2,7 @@
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 #include "token/token.h"
+#include "type/typeChecker.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -59,6 +60,9 @@ int main(int argc, char *argv[]) {
   Parser parser = Parser(tokens);
   std::unique_ptr<RootNode> ast = parser.parse();
   ast->debugPrint(0);
+
+  TypeChecker tc = TypeChecker(std::move(ast));
+  tc.validate();
 
   fp.close();
 
