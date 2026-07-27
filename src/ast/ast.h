@@ -1,7 +1,6 @@
 #ifndef AST_H
 #define AST_H
 
-#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>

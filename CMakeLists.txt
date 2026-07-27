@@ -18,11 +18,13 @@ set(SRCS
     src/token/token.cpp
     src/ast/ast.cpp
     src/parser/parser.cpp
+    src/type/typeChecker.cpp
 )
 
 set (TEST_SRCS
     tests/lexer.cpp 
     tests/parser.cpp
+    tests/typeChecker.cpp
 )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
