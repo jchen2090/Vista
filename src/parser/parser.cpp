@@ -1,7 +1,20 @@
 #include "parser.h"
 #include "../token/token.h"
+#include "type/types.h"
 #include <memory>
 #include <stdexcept>
+
+// Maps TokenType Enum to Type Enum
+Type tokenToType(TokenType tokenType) {
+  if (tokenType == TokenType::FLOAT_KEYWORD) {
+    return Type::FLOAT;
+  } else if (tokenType == TokenType::INT_KEYWORD) {
+    return Type::INT;
+  } else if (tokenType == TokenType::STR_KEYWORD) {
+    return Type::STR;
+  }
+  return Type::UNKNOWN;
+}
 
 Parser::Parser(std::vector<Token> listOfTokens) { tokens = listOfTokens; }
 
@@ -65,7 +78,7 @@ std::unique_ptr<ExprNode> Parser::parseExpression() {
 
 // Parse variable initialization
 std::unique_ptr<ASTNode> Parser::parseAssignmentStatement() {
-  Token type = advance();
+  Type type = tokenToType(advance().type);
 
   Token id =
       consume(TokenType::IDENTIFIER, "Expected a variable name after type.");
@@ -75,8 +88,7 @@ std::unique_ptr<ASTNode> Parser::parseAssignmentStatement() {
 
   consume(TokenType::EOL_TOKEN, "Expected new line after declaration.");
 
-  return std::make_unique<AssignmentStatement>(type.val, id.val,
-                                               std::move(value));
+  return std::make_unique<AssignmentStatement>(type, id.val, std::move(value));
 }
 
 std::unique_ptr<ASTNode> Parser::parseCoutStatement() {

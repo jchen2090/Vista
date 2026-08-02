@@ -1,6 +1,7 @@
 #ifndef AST_H
 #define AST_H
 
+#include "type/types.h"
 #include <memory>
 #include <string>
 #include <vector>
@@ -16,17 +17,18 @@ public:
 class ExprNode : public ASTNode {
 public:
   virtual ~ExprNode() = default;
+  virtual Type getExpression() const = 0;
 };
 
 class AssignmentStatement : public ASTNode {
 public:
-  std::string typeAnnotaiton;
+  Type typeAnnotation;
   std::string identifier;
   std::unique_ptr<ExprNode> value;
 
-  explicit AssignmentStatement(std::string type, std::string id,
+  explicit AssignmentStatement(Type type, std::string id,
                                std::unique_ptr<ExprNode> val)
-      : typeAnnotaiton(std::move(type)), identifier(std::move(id)),
+      : typeAnnotation(type), identifier(std::move(id)),
         value(std::move(val)) {};
 
   void debugPrint(int indent) const override;
@@ -49,6 +51,7 @@ public:
   explicit IdentifierNode(std::string id) : identifier(std::move(id)) {};
 
   void debugPrint(int indent) const override;
+  Type getExpression() const override;
 };
 
 class IntNode : public ExprNode {
@@ -57,6 +60,7 @@ public:
   explicit IntNode(int val) : value(val) {};
 
   void debugPrint(int indent) const override;
+  Type getExpression() const override;
 };
 
 class FloatNode : public ExprNode {
@@ -65,6 +69,7 @@ public:
   explicit FloatNode(double val) : value(val) {};
 
   void debugPrint(int indent) const override;
+  Type getExpression() const override;
 };
 
 class StrNode : public ExprNode {
@@ -73,6 +78,7 @@ public:
   explicit StrNode(std::string val) : value(std::move(val)) {};
 
   void debugPrint(int indent) const override;
+  Type getExpression() const override;
 };
 
 class RootNode : public ASTNode {

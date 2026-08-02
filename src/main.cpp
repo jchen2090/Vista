@@ -1,4 +1,5 @@
 #include "ast/ast.h"
+#include "codegen/codegen.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 #include "token/token.h"
@@ -61,8 +62,14 @@ int main(int argc, char *argv[]) {
   std::unique_ptr<RootNode> ast = parser.parse();
   ast->debugPrint(0);
 
-  TypeChecker tc = TypeChecker(std::move(ast));
-  tc.validate();
+  TypeChecker tc;
+  tc.validate(*ast);
+
+  LLVMGenerator codegen("Vista");
+  codegen.generate(*ast);
+
+  std::cout << "\n=== Generated LLVM IR ===\n";
+  codegen.dumpIR();
 
   fp.close();
 
