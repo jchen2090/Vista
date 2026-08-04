@@ -13,6 +13,8 @@ std::string TypeChecker::typeToString(Type t) {
     return "float";
   case Type::STR:
     return "str";
+  case Type::IDENTIFIER:
+    return "identifier";
   case Type::UNKNOWN:
     return "unknown";
   default:
@@ -29,6 +31,21 @@ void TypeChecker::validate(RootNode &root) {
 
       Type lhs = assignmentNode->typeAnnotation;
       Type rhs = assignmentNode->value->getExpression();
+
+      if (rhs == Type::IDENTIFIER) {
+        auto identifierNode =
+            dynamic_cast<IdentifierNode *>(assignmentNode->value.get());
+
+        if (!identifierNode ||
+            symbolTable.find(identifierNode->identifier) == symbolTable.end()) {
+
+          std::string msg = "TypeError: Variable '" +
+                            identifierNode->identifier + "' not declared";
+          throw std::runtime_error(msg);
+        }
+
+        rhs = symbolTable[identifierNode->identifier];
+      }
 
       if (rhs == Type::UNKNOWN || lhs != rhs) {
         std::string msg = "TypeError: Cannot assign '" + typeToString(rhs) +
@@ -47,6 +64,19 @@ void TypeChecker::validate(RootNode &root) {
 
       if (val == Type::UNKNOWN) {
         throw std::runtime_error("TypeError: Cannot print unknown type");
+      }
+
+      if (val == Type::IDENTIFIER) {
+        auto identifierNode =
+            dynamic_cast<IdentifierNode *>(printNode->value.get());
+
+        if (!identifierNode ||
+            symbolTable.find(identifierNode->identifier) == symbolTable.end()) {
+
+          std::string msg = "TypeError: Variable '" +
+                            identifierNode->identifier + "' not declared";
+          throw std::runtime_error(msg);
+        }
       }
     }
   }

@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <llvm/IR/Verifier.h>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
@@ -68,8 +69,10 @@ int main(int argc, char *argv[]) {
   LLVMGenerator codegen("Vista");
   codegen.generate(*ast);
 
+  // Verify vaid IR
   std::cout << "\n=== Generated LLVM IR ===\n";
   codegen.dumpIR();
+  codegen.verifyModule();
 
   fp.close();
 

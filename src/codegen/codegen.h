@@ -3,6 +3,7 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
+#include <llvm/Support/MathExtras.h>
 #include <unordered_map>
 
 #include "../ast/ast.h"
@@ -23,5 +24,6 @@ public:
       : module(moduleName, context), builder(context) {}
 
   void generate(RootNode &root);
-  void dumpIR() const { module.print(llvm::errs(), nullptr); }
+  inline void dumpIR() const { module.print(llvm::errs(), nullptr); }
+  inline bool verifyModule() { return llvm::verifyModule(module); }
 };

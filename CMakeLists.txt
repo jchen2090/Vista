@@ -34,9 +34,9 @@ set(SRCS
 
 # TODO: Fix typeChecker tests
 set(TEST_SRCS
-    # tests/lexer.cpp 
-    # tests/parser.cpp
-    # tests/typeChecker.cpp
+    tests/lexer.cpp 
+    tests/parser.cpp
+    tests/typeChecker.cpp
 )
 
 # ------------------------------------------------------------------------------
