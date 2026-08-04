@@ -9,9 +9,10 @@ TEST_CASE("Parse assignments", "[parser][assignments]") {
     Lexer lexer("int x = 5\n");
     auto root = Parser(lexer.tokenize()).parse();
     REQUIRE(root->statements.size() == 1);
-    auto assign = dynamic_cast<AssignmentStatement *>(root->statements[0].get());
+    auto assign =
+        dynamic_cast<AssignmentStatement *>(root->statements[0].get());
     REQUIRE(assign != nullptr);
-    REQUIRE(assign->typeAnnotaiton == "int");
+    REQUIRE(assign->typeAnnotation == Type::INT);
     REQUIRE(assign->identifier == "x");
     auto expr = dynamic_cast<IntNode *>(assign->value.get());
     REQUIRE(expr != nullptr);
@@ -21,8 +22,9 @@ TEST_CASE("Parse assignments", "[parser][assignments]") {
   SECTION("float pi = 3.14") {
     Lexer lexer("float pi = 3.14\n");
     auto root = Parser(lexer.tokenize()).parse();
-    auto assign = dynamic_cast<AssignmentStatement *>(root->statements[0].get());
-    REQUIRE(assign->typeAnnotaiton == "float");
+    auto assign =
+        dynamic_cast<AssignmentStatement *>(root->statements[0].get());
+    REQUIRE(assign->typeAnnotation == Type::FLOAT);
     REQUIRE(assign->identifier == "pi");
     auto expr = dynamic_cast<FloatNode *>(assign->value.get());
     REQUIRE(expr->value == 3.14);
@@ -31,8 +33,9 @@ TEST_CASE("Parse assignments", "[parser][assignments]") {
   SECTION("str msg = \"hello\"") {
     Lexer lexer("str msg = \"hello\"\n");
     auto root = Parser(lexer.tokenize()).parse();
-    auto assign = dynamic_cast<AssignmentStatement *>(root->statements[0].get());
-    REQUIRE(assign->typeAnnotaiton == "str");
+    auto assign =
+        dynamic_cast<AssignmentStatement *>(root->statements[0].get());
+    REQUIRE(assign->typeAnnotation == Type::STR);
     auto expr = dynamic_cast<StrNode *>(assign->value.get());
     REQUIRE(expr->value == "hello");
   }
@@ -40,7 +43,8 @@ TEST_CASE("Parse assignments", "[parser][assignments]") {
   SECTION("identifier with numbers: int var123 = 42") {
     Lexer lexer("int var123 = 42\n");
     auto root = Parser(lexer.tokenize()).parse();
-    auto assign = dynamic_cast<AssignmentStatement *>(root->statements[0].get());
+    auto assign =
+        dynamic_cast<AssignmentStatement *>(root->statements[0].get());
     REQUIRE(assign->identifier == "var123");
   }
 }
@@ -88,7 +92,8 @@ TEST_CASE("Parse multiple statements", "[parser][multiple-statements]") {
     REQUIRE(root->statements.size() == 2);
     auto first = dynamic_cast<AssignmentStatement *>(root->statements[0].get());
     REQUIRE(first->identifier == "x");
-    auto second = dynamic_cast<AssignmentStatement *>(root->statements[1].get());
+    auto second =
+        dynamic_cast<AssignmentStatement *>(root->statements[1].get());
     REQUIRE(second->identifier == "y");
   }
 
@@ -96,23 +101,29 @@ TEST_CASE("Parse multiple statements", "[parser][multiple-statements]") {
     Lexer lexer("cout (1)\ncout (2)\n");
     auto root = Parser(lexer.tokenize()).parse();
     REQUIRE(root->statements.size() == 2);
-    REQUIRE(dynamic_cast<PrintStatement *>(root->statements[0].get()) != nullptr);
-    REQUIRE(dynamic_cast<PrintStatement *>(root->statements[1].get()) != nullptr);
+    REQUIRE(dynamic_cast<PrintStatement *>(root->statements[0].get()) !=
+            nullptr);
+    REQUIRE(dynamic_cast<PrintStatement *>(root->statements[1].get()) !=
+            nullptr);
   }
 
   SECTION("mixed assignments and couts") {
     Lexer lexer("int x = 5\ncout (x)\nfloat y = 3.14\n");
     auto root = Parser(lexer.tokenize()).parse();
     REQUIRE(root->statements.size() == 3);
-    REQUIRE(dynamic_cast<AssignmentStatement *>(root->statements[0].get()) != nullptr);
-    REQUIRE(dynamic_cast<PrintStatement *>(root->statements[1].get()) != nullptr);
-    REQUIRE(dynamic_cast<AssignmentStatement *>(root->statements[2].get()) != nullptr);
+    REQUIRE(dynamic_cast<AssignmentStatement *>(root->statements[0].get()) !=
+            nullptr);
+    REQUIRE(dynamic_cast<PrintStatement *>(root->statements[1].get()) !=
+            nullptr);
+    REQUIRE(dynamic_cast<AssignmentStatement *>(root->statements[2].get()) !=
+            nullptr);
   }
 
   SECTION("cout after assignment with identifier check") {
     Lexer lexer("int a = 1\ncout (a)\n");
     auto root = Parser(lexer.tokenize()).parse();
-    auto assign = dynamic_cast<AssignmentStatement *>(root->statements[0].get());
+    auto assign =
+        dynamic_cast<AssignmentStatement *>(root->statements[0].get());
     REQUIRE(assign->identifier == "a");
     auto print = dynamic_cast<PrintStatement *>(root->statements[1].get());
     auto expr = dynamic_cast<IdentifierNode *>(print->value.get());
