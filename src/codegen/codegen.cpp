@@ -1,6 +1,63 @@
 #include "codegen.h"
 #include "ast/ast.h"
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/Module.h>
+#include <llvm/MC/TargetRegistry.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/Target/TargetMachine.h>
+#include <llvm/Target/TargetOptions.h>
+#include <llvm/TargetParser/Host.h>
+#include <llvm/TargetParser/Triple.h>
 #include <stdexcept>
+#include <system_error>
+
+void LLVMGenerator::emitFile(std::string &file) {
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmPrinter();
+
+  auto tripleStr = llvm::sys::getDefaultTargetTriple();
+
+  llvm::Triple targetTriple(tripleStr);
+
+  module.setTargetTriple(targetTriple);
+
+  std::string error;
+  auto target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
+  if (!target) {
+    llvm::errs() << "Error locating target: " << error << "\n";
+    return;
+  }
+
+  auto cpu = "generic";
+  auto features = "";
+  llvm::TargetOptions opt;
+  auto rm = std::optional<llvm::Reloc::Model>();
+  auto targetMachine =
+      target->createTargetMachine(targetTriple, cpu, features, opt, rm);
+
+  module.setDataLayout(targetMachine->createDataLayout());
+
+  std::error_code ec;
+  llvm::raw_fd_ostream dest(file, ec, llvm::sys::fs::OF_None);
+  if (ec) {
+    llvm::errs() << "Could not open file: " << ec.message() << "\n";
+    return;
+  }
+
+  llvm::legacy::PassManager pass;
+  auto fileType = llvm::CodeGenFileType::ObjectFile;
+
+  if (targetMachine->addPassesToEmitFile(pass, dest, nullptr, fileType)) {
+    llvm::errs() << "TargetMachine cannot emit a file of this type\n";
+    return;
+  }
+
+  pass.run(module);
+  dest.flush();
+};
 
 llvm::Value *LLVMGenerator::genereateExpressionNodeIR(ExprNode *exprNode) {
 
@@ -16,7 +73,9 @@ llvm::Value *LLVMGenerator::genereateExpressionNodeIR(ExprNode *exprNode) {
       throw std::runtime_error("Undeclared variable '" +
                                variableNode->identifier + "'");
     }
-    return symbolTable[variableNode->identifier];
+    llvm::AllocaInst *alloca = symbolTable[variableNode->identifier];
+    return builder.CreateLoad(alloca->getAllocatedType(), alloca,
+                              variableNode->identifier);
   }
   throw std::runtime_error("Unsupported AST node for LLVM IR generation");
 }
@@ -56,7 +115,7 @@ void LLVMGenerator::generate(RootNode &root) {
       llvm::Value *val = genereateExpressionNodeIR(printNode->value.get());
 
       llvm::FunctionType *printfType = llvm::FunctionType::get(
-          builder.getInt32Ty(), {builder.getInt8Ty()}, true);
+          builder.getInt32Ty(), {builder.getPtrTy()}, true);
       llvm::FunctionCallee printfFunc =
           module.getOrInsertFunction("printf", printfType);
 
@@ -76,4 +135,5 @@ void LLVMGenerator::generate(RootNode &root) {
       builder.CreateCall(printfFunc, {formatStrPtr, val});
     }
   }
+  builder.CreateRet(builder.getInt32(0));
 }

@@ -7,13 +7,15 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
+#include <llvm/Support/raw_ostream.h>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 
-std::string readFile(std::ifstream &file) {
+std::string readFile(const std::ifstream &file) {
   std::stringstream buffer;
   buffer << file.rdbuf();
   return buffer.str();
@@ -33,6 +35,8 @@ void vectorToString(const std::vector<Token> &vec) {
 }
 
 int main(int argc, char *argv[]) {
+  // TODO: Make this into a CLI flag
+  bool verbose = false;
   std::string currLine;
 
   if (argc != 2) {
@@ -57,23 +61,26 @@ int main(int argc, char *argv[]) {
   Lexer lexer = Lexer(sourceCode);
 
   std::vector<Token> tokens = lexer.tokenize();
-  vectorToString(tokens);
 
   Parser parser = Parser(tokens);
   std::unique_ptr<RootNode> ast = parser.parse();
-  ast->debugPrint(0);
 
   TypeChecker tc;
   tc.validate(*ast);
 
   LLVMGenerator codegen("Vista");
   codegen.generate(*ast);
-
-  // Verify vaid IR
-  std::cout << "\n=== Generated LLVM IR ===\n";
-  codegen.dumpIR();
   codegen.verifyModule();
 
+  if (verbose) {
+    vectorToString(tokens);
+    ast->debugPrint(0);
+    codegen.dumpIR();
+  }
+
+  std::string output = "output.o";
+
+  codegen.emitFile(output);
   fp.close();
 
   return 0;
