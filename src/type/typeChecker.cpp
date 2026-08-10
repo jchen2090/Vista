@@ -32,6 +32,14 @@ void TypeChecker::validate(RootNode &root) {
       Type lhs = assignmentNode->typeAnnotation;
       Type rhs = assignmentNode->value->getExpression();
 
+      std::string identifier = assignmentNode->identifier;
+
+      if (symbolTable.find(identifier) != symbolTable.end()) {
+        std::string msg =
+            "Error: variable '" + identifier + "' has already been declared";
+        throw std::runtime_error(msg);
+      }
+
       if (rhs == Type::IDENTIFIER) {
         auto identifierNode =
             dynamic_cast<IdentifierNode *>(assignmentNode->value.get());

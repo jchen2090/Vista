@@ -13,7 +13,7 @@ message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
 # Map required LLVM components to library targets
-llvm_map_components_to_libnames(llvm_libs core support irreader analysis)
+llvm_map_components_to_libnames(llvm_libs core support irreader analysis nativecodegen codegen)
 
 # Compile flags
 if(MSVC)
@@ -32,7 +32,6 @@ set(SRCS
     src/codegen/codegen.cpp
 )
 
-# TODO: Fix typeChecker tests
 set(TEST_SRCS
     tests/lexer.cpp 
     tests/parser.cpp

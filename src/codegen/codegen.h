@@ -24,6 +24,7 @@ public:
       : module(moduleName, context), builder(context) {}
 
   void generate(RootNode &root);
+  void emitFile(std::string &file);
   inline void dumpIR() const { module.print(llvm::errs(), nullptr); }
   inline bool verifyModule() { return llvm::verifyModule(module); }
 };

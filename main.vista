@@ -1,8 +1,9 @@
 int x = 5
+int a = x
 float y = 2.3
 str z = "hello"
 
 cout(x)
-cout(5)
+cout(67)
 cout(2.3)
 cout("hello")
