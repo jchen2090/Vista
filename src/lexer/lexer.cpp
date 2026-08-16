@@ -3,6 +3,7 @@
 #include <cctype>
 #include <iostream>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -51,7 +52,27 @@ Token Lexer::nextToken() {
       return Token{TokenType::CLOSE_PARENTHESES, ""};
     }
 
-    // Check for assignment
+    // Following conditionals check for binary operations
+    if (currentChar == '+') {
+      advance();
+      return Token{TokenType::ADD, "+"};
+    }
+
+    if (currentChar == '-') {
+      advance();
+      return Token{TokenType::SUBTRACT, "-"};
+    }
+
+    if (currentChar == '*') {
+      advance();
+      return Token{TokenType::MULTIPLY, "*"};
+    }
+
+    if (currentChar == '/') {
+      advance();
+      return Token{TokenType::DIVIDE, "/"};
+    }
+
     if (currentChar == '=') {
       advance();
       return Token{TokenType::ASSIGN, "="};
@@ -67,9 +88,8 @@ Token Lexer::nextToken() {
       }
 
       if (peek() == '\0') {
-        std::cerr << "Lexical Error: Invalid string literal '" << currentStr
-                  << "' is missing end \"" << std::endl;
-        exit(1);
+        throw std::runtime_error("Lexical Error: Invalid string literal '" +
+                                 currentStr + "' is missing end \"");
       }
       advance();
 
@@ -112,10 +132,11 @@ Token Lexer::nextToken() {
         if (peek() == '.') {
           // If we experience multiple decimal points e.g 3..14 we do not parse
           if (isFloat) {
-            std::cerr << "Lexical Error: Invalid numeric literal '"
-                      << currentNumber << peek() << "' has too many decimals"
-                      << std::endl;
-            exit(1);
+            std::string msg = "Lexical Error: Invalid numeric literal '" +
+                              currentNumber + peek() +
+                              "' has too many decimals";
+
+            throw std::runtime_error(msg);
           }
           isFloat = true;
         }

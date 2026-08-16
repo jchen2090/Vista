@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+enum class BinaryOp { ADD, SUBTRACT, MULTIPLY, DIVIDE };
+
 class ASTNode {
 public:
   virtual ~ASTNode() = default;
@@ -17,7 +19,21 @@ public:
 class ExprNode : public ASTNode {
 public:
   virtual ~ExprNode() = default;
-  virtual Type getExpression() const = 0;
+  virtual Type getType() const = 0;
+};
+
+class BinaryOpNode : public ExprNode {
+public:
+  std::unique_ptr<ExprNode> lhs;
+  BinaryOp op;
+  std::unique_ptr<ExprNode> rhs;
+
+  explicit BinaryOpNode(std::unique_ptr<ExprNode> lhs, BinaryOp op,
+                        std::unique_ptr<ExprNode> rhs)
+      : lhs(std::move(lhs)), op(op), rhs(std::move(rhs)) {};
+
+  void debugPrint(int indent) const override;
+  Type getType() const override;
 };
 
 class AssignmentStatement : public ASTNode {
@@ -51,7 +67,7 @@ public:
   explicit IdentifierNode(std::string id) : identifier(std::move(id)) {};
 
   void debugPrint(int indent) const override;
-  Type getExpression() const override;
+  Type getType() const override;
 };
 
 class IntNode : public ExprNode {
@@ -60,7 +76,7 @@ public:
   explicit IntNode(int val) : value(val) {};
 
   void debugPrint(int indent) const override;
-  Type getExpression() const override;
+  Type getType() const override;
 };
 
 class FloatNode : public ExprNode {
@@ -69,7 +85,7 @@ public:
   explicit FloatNode(double val) : value(val) {};
 
   void debugPrint(int indent) const override;
-  Type getExpression() const override;
+  Type getType() const override;
 };
 
 class StrNode : public ExprNode {
@@ -78,7 +94,7 @@ public:
   explicit StrNode(std::string val) : value(std::move(val)) {};
 
   void debugPrint(int indent) const override;
-  Type getExpression() const override;
+  Type getType() const override;
 };
 
 class RootNode : public ASTNode {

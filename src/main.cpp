@@ -59,11 +59,18 @@ int main(int argc, char *argv[]) {
 
   std::string sourceCode = readFile(fp);
   Lexer lexer = Lexer(sourceCode);
-
   std::vector<Token> tokens = lexer.tokenize();
+
+  if (verbose) {
+    vectorToString(tokens);
+  }
 
   Parser parser = Parser(tokens);
   std::unique_ptr<RootNode> ast = parser.parse();
+
+  if (verbose) {
+    ast->debugPrint(0);
+  }
 
   TypeChecker tc;
   tc.validate(*ast);
@@ -73,8 +80,6 @@ int main(int argc, char *argv[]) {
   codegen.verifyModule();
 
   if (verbose) {
-    vectorToString(tokens);
-    ast->debugPrint(0);
     codegen.dumpIR();
   }
 
