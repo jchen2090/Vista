@@ -21,6 +21,7 @@ private:
   std::unique_ptr<ASTNode> parseAssignmentStatement();
   std::unique_ptr<ExprNode> parseExpression();
   std::unique_ptr<ASTNode> parseCoutStatement();
+  std::unique_ptr<ExprNode> parseValue();
 
 public:
   Parser(std::vector<Token> listOfTokens);

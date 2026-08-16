@@ -1,5 +1,6 @@
 #include "parser.h"
 #include "../token/token.h"
+#include "ast/ast.h"
 #include "type/types.h"
 #include <memory>
 #include <stdexcept>
@@ -14,6 +15,19 @@ Type tokenToType(TokenType tokenType) {
     return Type::STR;
   }
   return Type::UNKNOWN;
+}
+
+BinaryOp tokenToBinOp(TokenType tokenType) {
+  if (tokenType == TokenType::ADD) {
+    return BinaryOp::ADD;
+  } else if (tokenType == TokenType::SUBTRACT) {
+    return BinaryOp::SUBTRACT;
+  } else if (tokenType == TokenType::MULTIPLY) {
+    return BinaryOp::MULTIPLY;
+  } else if (tokenType == TokenType::DIVIDE) {
+    return BinaryOp::DIVIDE;
+  }
+  throw std::runtime_error("Unable to convert token to binary op");
 }
 
 Parser::Parser(std::vector<Token> listOfTokens) { tokens = listOfTokens; }
@@ -47,33 +61,48 @@ Token Parser::consume(TokenType expectedType, std::string errMsg) {
   return advance();
 }
 
-// Parses expressions such as binary operations and whatnot, anything that
-// results in a numerical/string value
-std::unique_ptr<ExprNode> Parser::parseExpression() {
+// Parses the actual data type,
+std::unique_ptr<ExprNode> Parser::parseValue() {
   if (peek().type == TokenType::INT) {
-    Token t = advance();
+    Token t = consume(TokenType::INT, "Expected int literal");
     int value = std::stoi(t.val);
     return std::make_unique<IntNode>(value);
   }
 
   if (peek().type == TokenType::FLOAT) {
-    Token t = advance();
+    Token t = consume(TokenType::FLOAT, "Expected float literal");
     double value = std::stod(t.val);
     return std::make_unique<FloatNode>(value);
   }
 
   if (peek().type == TokenType::STR) {
-    Token t = advance();
+    Token t = consume(TokenType::STR, "Expected str literal");
     return std::make_unique<StrNode>(t.val);
   }
 
   if (peek().type == TokenType::IDENTIFIER) {
-    Token t = advance();
+    Token t = consume(TokenType::IDENTIFIER, "Expected identifier");
     return std::make_unique<IdentifierNode>(t.val);
   }
 
   throw std::runtime_error("Syntax Error: Expected a valid literal value.\n");
-  exit(1);
+}
+
+// Parses expressions such as binary operations and whatnot, anything that
+// results in a numerical/string value
+std::unique_ptr<ExprNode> Parser::parseExpression() {
+  std::unique_ptr<ExprNode> lhs = parseValue();
+
+  while (peek().type == TokenType::ADD || peek().type == TokenType::SUBTRACT ||
+         peek().type == TokenType::MULTIPLY ||
+         peek().type == TokenType::DIVIDE) {
+    Token op = advance();
+    std::unique_ptr<ExprNode> rhs = parseValue();
+
+    lhs = std::make_unique<BinaryOpNode>(std::move(lhs), tokenToBinOp(op.type),
+                                         std::move(rhs));
+  }
+  return lhs;
 }
 
 // Parse variable initialization
@@ -125,7 +154,18 @@ std::unique_ptr<RootNode> Parser::parse() {
     // Parse cout statements
     if (token.type == TokenType::COUT_KEYWORD) {
       root->statements.push_back(parseCoutStatement());
+      continue;
     }
+
+    // Parse binary expresseions
+    if (token.type == TokenType::INT || token.type == TokenType::FLOAT ||
+        token.type == TokenType::IDENTIFIER) {
+      root->statements.push_back(parseExpression());
+      continue;
+    }
+
+    std::string msg = "Unable to parse token \n";
+    throw std::runtime_error(msg);
   }
   return root;
 }

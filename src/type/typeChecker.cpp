@@ -1,4 +1,5 @@
 #include "typeChecker.h"
+#include "ast/ast.h"
 #include "types.h"
 #include <memory>
 #include <stdexcept>
@@ -22,6 +23,7 @@ std::string TypeChecker::typeToString(Type t) {
   }
 }
 
+// TODO: This class needs a major refactor...Look into visitor pattern
 void TypeChecker::validate(RootNode &root) {
   for (std::unique_ptr<ASTNode> &node : root.statements) {
 
@@ -30,7 +32,7 @@ void TypeChecker::validate(RootNode &root) {
             dynamic_cast<AssignmentStatement *>(node.get())) {
 
       Type lhs = assignmentNode->typeAnnotation;
-      Type rhs = assignmentNode->value->getExpression();
+      Type rhs = assignmentNode->value->getType();
 
       std::string identifier = assignmentNode->identifier;
 
@@ -68,7 +70,7 @@ void TypeChecker::validate(RootNode &root) {
     else if (PrintStatement *printNode =
                  dynamic_cast<PrintStatement *>(node.get())) {
 
-      Type val = printNode->value->getExpression();
+      Type val = printNode->value->getType();
 
       if (val == Type::UNKNOWN) {
         throw std::runtime_error("TypeError: Cannot print unknown type");
@@ -84,6 +86,121 @@ void TypeChecker::validate(RootNode &root) {
           std::string msg = "TypeError: Variable '" +
                             identifierNode->identifier + "' not declared";
           throw std::runtime_error(msg);
+        }
+      }
+
+      // TODO: PLEASE REFACTOR THIS
+      if (val == Type::BIN_OP) {
+        auto binaryOp = dynamic_cast<BinaryOpNode *>(printNode->value.get());
+        std::string opString;
+
+        if (binaryOp->op == BinaryOp::ADD) {
+          opString = "add";
+        } else if (binaryOp->op == BinaryOp::SUBTRACT) {
+          opString = "subtract";
+        } else if (binaryOp->op == BinaryOp::MULTIPLY) {
+          opString = "multiply";
+        } else if (binaryOp->op == BinaryOp::DIVIDE) {
+          opString = "divide";
+        }
+        Type lhsType = binaryOp->lhs->getType();
+        Type rhsType = binaryOp->rhs->getType();
+
+        std::string errMsg = "TypeError: Cannot " + opString + " type " +
+                             typeToString(lhsType) + " and type " +
+                             typeToString(rhsType);
+
+        if (lhsType == Type::STR || rhsType == Type::STR) {
+          throw std::runtime_error(errMsg);
+        } else if (lhsType != rhsType) {
+          throw std::runtime_error(errMsg);
+        } else if (lhsType == Type::IDENTIFIER || rhsType == Type::IDENTIFIER) {
+          auto *lhs = dynamic_cast<IdentifierNode *>(binaryOp->lhs.get());
+          auto *rhs = dynamic_cast<IdentifierNode *>(binaryOp->rhs.get());
+
+          if (!lhs || !rhs) {
+            throw std::runtime_error(
+                "TypeError: Cannot cast binOp LHS and RHS to identifierNodes");
+          }
+
+          if (symbolTable.find(lhs->identifier) == symbolTable.end()) {
+            throw std::runtime_error("TypeError: variable '" + lhs->identifier +
+                                     "' is unknown");
+          }
+
+          if (symbolTable.find(rhs->identifier) == symbolTable.end()) {
+            throw std::runtime_error("TypeError: variable '" + rhs->identifier +
+                                     "' is unknown");
+          }
+
+          Type lhsVarType = symbolTable[lhs->identifier];
+          Type rhsVarType = symbolTable[rhs->identifier];
+
+          errMsg = "TypeError: Cannot " + opString + " type " +
+                   typeToString(lhsVarType) + " and type " +
+                   typeToString(rhsVarType);
+
+          if (lhsVarType == Type::STR || rhsVarType == Type::STR) {
+            throw std::runtime_error(errMsg);
+          } else if (lhsVarType != rhsVarType) {
+            throw std::runtime_error(errMsg);
+          }
+        }
+      }
+
+    } else if (auto *binaryOP = dynamic_cast<BinaryOpNode *>(node.get())) {
+      std::string opString;
+
+      if (binaryOP->op == BinaryOp::ADD) {
+        opString = "add";
+      } else if (binaryOP->op == BinaryOp::SUBTRACT) {
+        opString = "subtract";
+      } else if (binaryOP->op == BinaryOp::MULTIPLY) {
+        opString = "multiply";
+      } else if (binaryOP->op == BinaryOp::DIVIDE) {
+        opString = "divide";
+      }
+      Type lhsType = binaryOP->lhs->getType();
+      Type rhsType = binaryOP->rhs->getType();
+
+      std::string errMsg = "TypeError: Cannot " + opString + " type " +
+                           typeToString(lhsType) + " and type " +
+                           typeToString(rhsType);
+
+      if (lhsType == Type::STR || rhsType == Type::STR) {
+        throw std::runtime_error(errMsg);
+      } else if (lhsType != rhsType) {
+        throw std::runtime_error(errMsg);
+      } else if (lhsType == Type::IDENTIFIER || rhsType == Type::IDENTIFIER) {
+        auto *lhs = dynamic_cast<IdentifierNode *>(binaryOP->lhs.get());
+        auto *rhs = dynamic_cast<IdentifierNode *>(binaryOP->rhs.get());
+
+        if (!lhs || !rhs) {
+          throw std::runtime_error(
+              "TypeError: Cannot cast binOp LHS and RHS to identifierNodes");
+        }
+
+        if (symbolTable.find(lhs->identifier) == symbolTable.end()) {
+          throw std::runtime_error("TypeError: variable '" + lhs->identifier +
+                                   "' is unknown");
+        }
+
+        if (symbolTable.find(rhs->identifier) == symbolTable.end()) {
+          throw std::runtime_error("TypeError: variable '" + rhs->identifier +
+                                   "' is unknown");
+        }
+
+        Type lhsVarType = symbolTable[lhs->identifier];
+        Type rhsVarType = symbolTable[rhs->identifier];
+
+        errMsg = "TypeError: Cannot " + opString + " type " +
+                 typeToString(lhsVarType) + " and type " +
+                 typeToString(rhsVarType);
+
+        if (lhsVarType == Type::STR || rhsVarType == Type::STR) {
+          throw std::runtime_error(errMsg);
+        } else if (lhsVarType != rhsVarType) {
+          throw std::runtime_error(errMsg);
         }
       }
     }

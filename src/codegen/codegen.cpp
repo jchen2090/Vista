@@ -3,6 +3,7 @@
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/Value.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/TargetSelect.h>
@@ -59,6 +60,32 @@ void LLVMGenerator::emitFile(std::string &file) {
   dest.flush();
 };
 
+llvm::Value *LLVMGenerator::generateBinaryOpIR(llvm::Value *lhs,
+                                               llvm::Value *rhs, BinaryOp op) {
+
+  std::string opStr;
+  if (op == BinaryOp::ADD) {
+    opStr = "+";
+  } else if (op == BinaryOp::SUBTRACT) {
+    opStr = "-";
+  } else if (op == BinaryOp::MULTIPLY) {
+    opStr = "*";
+  } else if (op == BinaryOp::DIVIDE) {
+    opStr = "/";
+  }
+
+  if (op == BinaryOp::ADD) {
+    return builder.CreateAdd(lhs, rhs);
+  } else if (op == BinaryOp::SUBTRACT) {
+    return builder.CreateSub(lhs, rhs);
+  } else if (op == BinaryOp::MULTIPLY) {
+    return builder.CreateMul(lhs, rhs);
+  } else if (op == BinaryOp::DIVIDE) {
+    return builder.CreateSDiv(lhs, rhs);
+  }
+  throw std::runtime_error("Unsupported binary operation " + opStr);
+}
+
 llvm::Value *LLVMGenerator::genereateExpressionNodeIR(ExprNode *exprNode) {
 
   if (auto *intNode = dynamic_cast<IntNode *>(exprNode)) {
@@ -76,6 +103,11 @@ llvm::Value *LLVMGenerator::genereateExpressionNodeIR(ExprNode *exprNode) {
     llvm::AllocaInst *alloca = symbolTable[variableNode->identifier];
     return builder.CreateLoad(alloca->getAllocatedType(), alloca,
                               variableNode->identifier);
+  } else if (auto *binOpNode = dynamic_cast<BinaryOpNode *>(exprNode)) {
+    llvm::Value *lhs = genereateExpressionNodeIR(binOpNode->lhs.get());
+    llvm::Value *rhs = genereateExpressionNodeIR(binOpNode->rhs.get());
+
+    return generateBinaryOpIR(lhs, rhs, binOpNode->op);
   }
   throw std::runtime_error("Unsupported AST node for LLVM IR generation");
 }
@@ -133,6 +165,8 @@ void LLVMGenerator::generate(RootNode &root) {
       }
 
       builder.CreateCall(printfFunc, {formatStrPtr, val});
+    } else if (auto *binOpNode = dynamic_cast<BinaryOpNode *>(node.get())) {
+      genereateExpressionNodeIR(binOpNode);
     }
   }
   builder.CreateRet(builder.getInt32(0));

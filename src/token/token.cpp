@@ -46,6 +46,18 @@ void Token::print() const {
   case (TokenType::CLOSE_PARENTHESES):
     typeName = "CLOSE PARENTHESES";
     break;
+  case (TokenType::ADD):
+    typeName = "ADD";
+    break;
+  case (TokenType::SUBTRACT):
+    typeName = "SUBTRACT";
+    break;
+  case (TokenType::MULTIPLY):
+    typeName = "MULTIPLY";
+    break;
+  case (TokenType::DIVIDE):
+    typeName = "DIVIDE";
+    break;
   default:
     typeName = "DID NOT DEFINE TYPE";
     break;

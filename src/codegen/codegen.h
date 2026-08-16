@@ -2,6 +2,7 @@
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/Value.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/MathExtras.h>
 #include <unordered_map>
@@ -18,6 +19,8 @@ private:
 
   llvm::Value *genereateExpressionNodeIR(ExprNode *);
   void createMainFn();
+  llvm::Value *generateBinaryOpIR(llvm::Value *lhs, llvm::Value *rhs,
+                                  BinaryOp op);
 
 public:
   LLVMGenerator(const std::string &moduleName)

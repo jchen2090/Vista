@@ -17,6 +17,10 @@ enum class TokenType {
   STR,
   OPEN_PARENTHESES,
   CLOSE_PARENTHESES,
+  ADD,
+  SUBTRACT,
+  MULTIPLY,
+  DIVIDE
 };
 
 struct Token {

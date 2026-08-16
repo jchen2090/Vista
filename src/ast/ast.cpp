@@ -1,6 +1,7 @@
 #include "ast.h"
 #include "type/types.h"
 #include <iostream>
+#include <stdexcept>
 #include <string>
 
 // Change from Type Enum to String for debugging/logging purposes
@@ -48,24 +49,51 @@ void IdentifierNode::debugPrint(int indent) const {
   std::cout << std::string(indent, ' ') << "IdentifierNode: " << identifier
             << "\n";
 }
-
-Type IdentifierNode::getExpression() const { return Type::IDENTIFIER; }
+Type IdentifierNode::getType() const { return Type::IDENTIFIER; }
 
 void IntNode::debugPrint(int indent) const {
   std::cout << std::string(indent, ' ') << "IntLiteral: " << value << "\n";
 }
-
-Type IntNode::getExpression() const { return Type::INT; }
+Type IntNode::getType() const { return Type::INT; }
 
 void FloatNode::debugPrint(int indent) const {
   std::cout << std::string(indent, ' ') << "FloatLiteral: " << value << "\n";
 }
-
-Type FloatNode::getExpression() const { return Type::FLOAT; }
+Type FloatNode::getType() const { return Type::FLOAT; }
 
 void StrNode::debugPrint(int indent) const {
   // Wrapping in quotes makes strings much easier to visually debug
   std::cout << std::string(indent, ' ') << "StrLiteral: \"" << value << "\"\n";
 }
+Type StrNode::getType() const { return Type::STR; }
 
-Type StrNode::getExpression() const { return Type::STR; }
+void BinaryOpNode::debugPrint(int indent) const {
+  std::string operatorStr;
+
+  switch (op) {
+  case BinaryOp::ADD:
+    operatorStr = "+";
+    break;
+  case BinaryOp::SUBTRACT:
+    operatorStr = "-";
+    break;
+  case BinaryOp::MULTIPLY:
+    operatorStr = "*";
+    break;
+  case BinaryOp::DIVIDE:
+    operatorStr = "/";
+    break;
+  default:
+    throw std::runtime_error("Invalid binary expression operator");
+  };
+  std::cout << std::string(indent, ' ') << "BinaryExprNode: " << operatorStr
+            << "\n";
+
+  if (lhs) {
+    lhs->debugPrint(indent + 2);
+  }
+  if (rhs) {
+    rhs->debugPrint(indent + 2);
+  }
+}
+Type BinaryOpNode::getType() const { return Type::BIN_OP; }
